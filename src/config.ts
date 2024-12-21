@@ -15,10 +15,16 @@ interface Config {
     GROQ: string;
     ANTHROPIC: string;
     GEMINI: string;
+    OPENROUTER: string;
   };
   API_ENDPOINTS: {
     SEARXNG: string;
     OLLAMA: string;
+    OPENROUTER: string;
+  };
+  OPENROUTER: {
+    HTTP_REFERER: string;
+    APP_NAME: string;
   };
 }
 
@@ -50,6 +56,12 @@ export const getSearxngApiEndpoint = () =>
   process.env.SEARXNG_API_URL || loadConfig().API_ENDPOINTS.SEARXNG;
 
 export const getOllamaApiEndpoint = () => loadConfig().API_ENDPOINTS.OLLAMA;
+
+export const getOpenRouterApiKey = () => loadConfig().API_KEYS.OPENROUTER;
+
+export const getOpenRouterHttpReferer = () => loadConfig().OPENROUTER?.HTTP_REFERER;
+
+export const getOpenRouterAppName = () => loadConfig().OPENROUTER?.APP_NAME;
 
 export const updateConfig = (config: RecursivePartial<Config>) => {
   const currentConfig = loadConfig();

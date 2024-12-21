@@ -9,6 +9,9 @@ import {
   getAnthropicApiKey,
   getGeminiApiKey,
   getOpenaiApiKey,
+  getOpenRouterApiKey,
+  getOpenRouterHttpReferer,
+  getOpenRouterAppName,
   updateConfig,
 } from '../config';
 import logger from '../utils/logger';
@@ -54,6 +57,9 @@ router.get('/', async (_, res) => {
     config['anthropicApiKey'] = getAnthropicApiKey();
     config['groqApiKey'] = getGroqApiKey();
     config['geminiApiKey'] = getGeminiApiKey();
+    config['openrouterApiKey'] = getOpenRouterApiKey();
+    config['openrouterHttpReferer'] = getOpenRouterHttpReferer();
+    config['openrouterAppName'] = getOpenRouterAppName();
 
     res.status(200).json(config);
   } catch (err: any) {
@@ -71,9 +77,14 @@ router.post('/', async (req, res) => {
       GROQ: config.groqApiKey,
       ANTHROPIC: config.anthropicApiKey,
       GEMINI: config.geminiApiKey,
+      OPENROUTER: config.openrouterApiKey,
     },
     API_ENDPOINTS: {
       OLLAMA: config.ollamaApiUrl,
+    },
+    OPENROUTER: {
+      HTTP_REFERER: config.openrouterHttpReferer,
+      APP_NAME: config.openrouterAppName,
     },
   };
 
