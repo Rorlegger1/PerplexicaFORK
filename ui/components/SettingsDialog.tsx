@@ -7,12 +7,7 @@ import {
   TransitionChild,
 } from '@headlessui/react';
 import { CloudUpload, RefreshCcw, RefreshCw } from 'lucide-react';
-import React, {
-  Fragment,
-  useEffect,
-  useState,
-  type SelectHTMLAttributes,
-} from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import ThemeSwitcher from './theme/Switcher';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
@@ -29,8 +24,14 @@ const Input = ({ className, ...restProps }: InputProps) => {
   );
 };
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  options: { value: string; label: string; disabled?: boolean }[];
+interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  options: SelectOption[];
 }
 
 export const Select = ({ className, options, ...restProps }: SelectProps) => {
@@ -42,56 +43,52 @@ export const Select = ({ className, options, ...restProps }: SelectProps) => {
         className,
       )}
     >
-      {options.map(({ label, value, disabled }) => {
-        return (
-          <option key={value} value={value} disabled={disabled}>
-            {label}
-          </option>
-        );
-      })}
+      {options.map(({ label, value, disabled }) => (
+        <option key={value} value={value} disabled={disabled}>
+          {label}
+        </option>
+      ))}
     </select>
   );
 };
 
+interface ModelInfo {
+  name: string;
+  displayName: string;
+}
+
 interface SettingsType {
   chatModelProviders: {
-    [key: string]: [Record<string, any>];
+    [key: string]: ModelInfo[];
   };
   embeddingModelProviders: {
-    [key: string]: [Record<string, any>];
+    [key: string]: ModelInfo[];
   };
   openaiApiKey: string;
   groqApiKey: string;
   anthropicApiKey: string;
   geminiApiKey: string;
+  openrouterApiKey: string;
+  openrouterHttpReferer: string;
+  openrouterAppName: string;
   ollamaApiUrl: string;
 }
 
-const SettingsDialog = ({
-  isOpen,
-  setIsOpen,
-}: {
+interface SettingsDialogProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-}) => {
+}
+
+const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, setIsOpen }) => {
   const [config, setConfig] = useState<SettingsType | null>(null);
-  const [chatModels, setChatModels] = useState<Record<string, any>>({});
-  const [embeddingModels, setEmbeddingModels] = useState<Record<string, any>>(
-    {},
-  );
-  const [selectedChatModelProvider, setSelectedChatModelProvider] = useState<
-    string | null
-  >(null);
-  const [selectedChatModel, setSelectedChatModel] = useState<string | null>(
-    null,
-  );
-  const [selectedEmbeddingModelProvider, setSelectedEmbeddingModelProvider] =
-    useState<string | null>(null);
-  const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState<
-    string | null
-  >(null);
-  const [customOpenAIApiKey, setCustomOpenAIApiKey] = useState<string>('');
-  const [customOpenAIBaseURL, setCustomOpenAIBaseURL] = useState<string>('');
+  const [chatModels, setChatModels] = useState<Record<string, ModelInfo[]>>({});
+  const [embeddingModels, setEmbeddingModels] = useState<Record<string, ModelInfo[]>>({});
+  const [selectedChatModelProvider, setSelectedChatModelProvider] = useState<string | null>(null);
+  const [selectedChatModel, setSelectedChatModel] = useState<string | null>(null);
+  const [selectedEmbeddingModelProvider, setSelectedEmbeddingModelProvider] = useState<string | null>(null);
+  const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState<string | null>(null);
+  const [customOpenAIApiKey, setCustomOpenAIApiKey] = useState('');
+  const [customOpenAIBaseURL, setCustomOpenAIBaseURL] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -99,69 +96,52 @@ const SettingsDialog = ({
     if (isOpen) {
       const fetchConfig = async () => {
         setIsLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/config`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/config`, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
 
-        const data = (await res.json()) as SettingsType;
-        setConfig(data);
+          const data = (await res.json()) as SettingsType;
+          setConfig(data);
 
-        const chatModelProvidersKeys = Object.keys(
-          data.chatModelProviders || {},
-        );
-        const embeddingModelProvidersKeys = Object.keys(
-          data.embeddingModelProviders || {},
-        );
+          const chatModelProvidersKeys = Object.keys(data.chatModelProviders || {});
+          const embeddingModelProvidersKeys = Object.keys(data.embeddingModelProviders || {});
 
-        const defaultChatModelProvider =
-          chatModelProvidersKeys.length > 0 ? chatModelProvidersKeys[0] : '';
-        const defaultEmbeddingModelProvider =
-          embeddingModelProvidersKeys.length > 0
-            ? embeddingModelProvidersKeys[0]
-            : '';
+          const defaultChatModelProvider = chatModelProvidersKeys.length > 0 ? chatModelProvidersKeys[0] : '';
+          const defaultEmbeddingModelProvider = embeddingModelProvidersKeys.length > 0 ? embeddingModelProvidersKeys[0] : '';
 
-        const chatModelProvider =
-          localStorage.getItem('chatModelProvider') ||
-          defaultChatModelProvider ||
-          '';
-        const chatModel =
-          localStorage.getItem('chatModel') ||
-          (data.chatModelProviders &&
-          data.chatModelProviders[chatModelProvider]?.length > 0
-            ? data.chatModelProviders[chatModelProvider][0].name
-            : undefined) ||
-          '';
-        const embeddingModelProvider =
-          localStorage.getItem('embeddingModelProvider') ||
-          defaultEmbeddingModelProvider ||
-          '';
-        const embeddingModel =
-          localStorage.getItem('embeddingModel') ||
-          (data.embeddingModelProviders &&
-            data.embeddingModelProviders[embeddingModelProvider]?.[0].name) ||
-          '';
+          const chatModelProvider = localStorage.getItem('chatModelProvider') || defaultChatModelProvider;
+          const chatModel = localStorage.getItem('chatModel') || 
+            (data.chatModelProviders?.[chatModelProvider]?.[0]?.name ?? '');
+          const embeddingModelProvider = localStorage.getItem('embeddingModelProvider') || defaultEmbeddingModelProvider;
+          const embeddingModel = localStorage.getItem('embeddingModel') || 
+            (data.embeddingModelProviders?.[embeddingModelProvider]?.[0]?.name ?? '');
 
-        setSelectedChatModelProvider(chatModelProvider);
-        setSelectedChatModel(chatModel);
-        setSelectedEmbeddingModelProvider(embeddingModelProvider);
-        setSelectedEmbeddingModel(embeddingModel);
-        setCustomOpenAIApiKey(localStorage.getItem('openAIApiKey') || '');
-        setCustomOpenAIBaseURL(localStorage.getItem('openAIBaseURL') || '');
-        setChatModels(data.chatModelProviders || {});
-        setEmbeddingModels(data.embeddingModelProviders || {});
-        setIsLoading(false);
+          setSelectedChatModelProvider(chatModelProvider);
+          setSelectedChatModel(chatModel);
+          setSelectedEmbeddingModelProvider(embeddingModelProvider);
+          setSelectedEmbeddingModel(embeddingModel);
+          setCustomOpenAIApiKey(localStorage.getItem('openAIApiKey') || '');
+          setCustomOpenAIBaseURL(localStorage.getItem('openAIBaseURL') || '');
+          setChatModels(data.chatModelProviders || {});
+          setEmbeddingModels(data.embeddingModelProviders || {});
+        } catch (error) {
+          console.error('Error fetching config:', error);
+        } finally {
+          setIsLoading(false);
+        }
       };
 
       fetchConfig();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleSubmit = async () => {
+    if (!config) return;
+    
     setIsUpdating(true);
-
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/config`, {
         method: 'POST',
@@ -171,21 +151,17 @@ const SettingsDialog = ({
         body: JSON.stringify(config),
       });
 
-      localStorage.setItem('chatModelProvider', selectedChatModelProvider!);
-      localStorage.setItem('chatModel', selectedChatModel!);
-      localStorage.setItem(
-        'embeddingModelProvider',
-        selectedEmbeddingModelProvider!,
-      );
-      localStorage.setItem('embeddingModel', selectedEmbeddingModel!);
-      localStorage.setItem('openAIApiKey', customOpenAIApiKey!);
-      localStorage.setItem('openAIBaseURL', customOpenAIBaseURL!);
-    } catch (err) {
-      console.log(err);
+      if (selectedChatModelProvider) localStorage.setItem('chatModelProvider', selectedChatModelProvider);
+      if (selectedChatModel) localStorage.setItem('chatModel', selectedChatModel);
+      if (selectedEmbeddingModelProvider) localStorage.setItem('embeddingModelProvider', selectedEmbeddingModelProvider);
+      if (selectedEmbeddingModel) localStorage.setItem('embeddingModel', selectedEmbeddingModel);
+      localStorage.setItem('openAIApiKey', customOpenAIApiKey);
+      localStorage.setItem('openAIBaseURL', customOpenAIBaseURL);
+    } catch (error) {
+      console.error('Error updating config:', error);
     } finally {
       setIsUpdating(false);
       setIsOpen(false);
-
       window.location.reload();
     }
   };
@@ -489,6 +465,54 @@ const SettingsDialog = ({
                           setConfig({
                             ...config,
                             geminiApiKey: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-black/70 dark:text-white/70 text-sm">
+                        OpenRouter API Key
+                      </p>
+                      <Input
+                        type="text"
+                        placeholder="OpenRouter API Key"
+                        defaultValue={config.openrouterApiKey}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            openrouterApiKey: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-black/70 dark:text-white/70 text-sm">
+                        OpenRouter HTTP Referer
+                      </p>
+                      <Input
+                        type="text"
+                        placeholder="Your site URL for OpenRouter rankings"
+                        defaultValue={config.openrouterHttpReferer}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            openrouterHttpReferer: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-black/70 dark:text-white/70 text-sm">
+                        OpenRouter App Name
+                      </p>
+                      <Input
+                        type="text"
+                        placeholder="Your app name for OpenRouter rankings"
+                        defaultValue={config.openrouterAppName}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            openrouterAppName: e.target.value,
                           })
                         }
                       />

@@ -4,6 +4,7 @@ import { loadOpenAIChatModels, loadOpenAIEmbeddingsModels } from './openai';
 import { loadAnthropicChatModels } from './anthropic';
 import { loadTransformersEmbeddingsModels } from './transformers';
 import { loadGeminiChatModels, loadGeminiEmbeddingsModels } from './gemini';
+import { loadOpenRouterChatModels } from './openrouter';
 
 const chatModelProviders = {
   openai: loadOpenAIChatModels,
@@ -11,6 +12,7 @@ const chatModelProviders = {
   ollama: loadOllamaChatModels,
   anthropic: loadAnthropicChatModels,
   gemini: loadGeminiChatModels,
+  openrouter: loadOpenRouterChatModels,
 };
 
 const embeddingModelProviders = {
